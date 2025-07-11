@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sukhmeet Singh | Portfolio</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Header & Navigation -->
+    <header>
+        <nav>
+            <div class="logo">SUKHMEET SINGH</div>
+            <ul class="nav-links">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#education">Education</a></li>
+                <li><a href="#experience">Experience</a></li>
+                <li><a href="#projects">Projects</a></li>
+                <li><a href="#skills">Skills</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+            <div class="hamburger">
+                <div class="line"></div>
+                <div class="line"></div>
+                <div class="line"></div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <h1>Hi, I'm <span>Sukhmeet Singh</span></h1>
+            <p>Computer Science Engineer | Web Developer</p>
+            <div class="social-links">
+                <a href="https://github.com/yourusername" target="_blank"><i class="fab fa-github"></i></a>
+                <a href="https://linkedin.com/in/yourprofile" target="_blank"><i class="fab fa-linkedin"></i></a>
+                <a href="mailto:31sukhmeet@gmail.com"><i class="fas fa-envelope"></i></a>
+            </div>
+            <a href="#contact" class="btn">Contact Me</a>
+        </div>
+        <div class="hero-image">
+            <img src="https://via.placeholder.com/400" alt="Profile Image">
+        </div>
+    </section>
+
+    <!-- Education Section -->
+    <section id="education" class="education">
+        <h2>Education</h2>
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-content">
+                    <h3>B.Tech. (CSE)</h3>
+                    <p>Guru Tegh Bahadur Institute of Technology, Delhi</p>
+                    <p>7.753 CGPA | 2022-Present</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-content">
+                    <h3>Senior Secondary</h3>
+                    <p>SS Mota Singh Model School</p>
+                    <p>90.4% | 2021</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-content">
+                    <h3>Secondary</h3>
+                    <p>SS Mota Singh Model School</p>
+                    <p>87.6% | 2019</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Experience Section -->
+    <section id="experience" class="experience">
+        <h2>Experience</h2>
+        <div class="exp-container">
+            <div class="exp-card">
+                <h3>Cipher GTBIT</h3>
+                <p class="role">Management CO-Lead (Feb 2025 - Present)</p>
+                <ul>
+                    <li>Conducted IoT workshops using Arduino & sensors.</li>
+                    <li>Mentored juniors on tech projects.</li>
+                    <li>Managed team tasks & event planning.</li>
+                </ul>
+            </div>
+            <div class="exp-card">
+                <h3>Infinity GTBIT</h3>
+                <p class="role">Coordinator (Jan 2024 - Present)</p>
+                <ul>
+                    <li>Organized coding contests & tech events.</li>
+                    <li>Handled registrations & volunteer coordination.</li>
+                    <li>Ensured smooth event execution.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Projects Section -->
+    <section id="projects" class="projects">
+        <h2>Projects</h2>
+        <div class="project-grid">
+            <div class="project-card">
+                <h3>Currency Converter</h3>
+                <p>A responsive web app fetching real-time exchange rates with dark mode.</p>
+                <a href="https://currencyconverterr-mu.vercel.app/" target="_blank" class="btn">View Project</a>
+            </div>
+            <div class="project-card">
+                <h3>Mini Games Collection</h3>
+                <p>Interactive web app with Tic Tac Toe, Snake, RPS & Typing Test.</p>
+                <a href="https://minigames-pi.vercel.app/" target="_blank" class="btn">View Project</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Skills Section -->
+    <section id="skills" class="skills">
+        <h2>Skills</h2>
+        <div class="skills-container">
+            <div class="skill-category">
+                <h3>Technical</h3>
+                <ul>
+                    <li>HTML, CSS, JavaScript</li>
+                    <li>Java, OOP</li>
+                    <li>MySQL, C/C++</li>
+                </ul>
+            </div>
+            <div class="skill-category">
+                <h3>Non-Technical</h3>
+                <ul>
+                    <li>Management</li>
+                    <li>Outreach</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact">
+        <h2>Get In Touch</h2>
+        <div class="contact-info">
+            <p><i class="fas fa-phone"></i> +91-9711385773</p>
+            <p><i class="fas fa-envelope"></i> 31sukhmeet@gmail.com</p>
+        </div>
+        <form id="contact-form" class="contact-form" action="send_email.php" method="POST">
+    <input type="text" name="name" placeholder="Your Name" required>
+    <input type="email" name="email" placeholder="Your Email" required>
+    <textarea name="message" placeholder="Your Message" required></textarea>
+    <button type="submit" class="btn">Send Message</button>
+</form>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2024 Sukhmeet Singh. All Rights Reserved.</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
