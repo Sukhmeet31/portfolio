@@ -2,12 +2,15 @@ import { projects } from "@/lib/content";
 import { destinations, WORLD } from "@/lib/workshop-world";
 import type { Position } from "@/lib/movement";
 import { signals } from "@/lib/signal-run";
+import { COVE, COVE_DOCK, MAIN_DOCK } from "@/lib/adventure";
 
 export function MiniMap({ position, progress }: { position: Position; progress: number | null }) {
   return <div className="workshop-minimap">
     <span className="mono">YOU ARE HERE</span>
-    <svg viewBox="-35 -28 70 56" role="img" aria-label={`Workshop map. Rover at X ${position.x.toFixed(1)}, Z ${position.z.toFixed(1)}.`}>
-      <rect x="-35" y="-28" width="70" height="56" rx="3" fill="#84b9c5" />
+    <svg viewBox="-35 -28 96 56" role="img" aria-label={`Workshop map. Rover at X ${position.x.toFixed(1)}, Z ${position.z.toFixed(1)}.`}>
+      <rect x="-35" y="-28" width="96" height="56" rx="3" fill="#84b9c5" />
+      <path d={`M${MAIN_DOCK.x} ${MAIN_DOCK.z} L${COVE_DOCK.x} ${COVE_DOCK.z}`} stroke="#efe8d1" strokeWidth="1" strokeDasharray="2 2" />
+      <rect x={COVE.x - COVE.width / 2} y={-COVE.depth / 2} width={COVE.width} height={COVE.depth} rx="2" fill="#a7c7aa" />
       <rect x={-WORLD.width / 2} y={-WORLD.depth / 2} width={WORLD.width} height={WORLD.depth} rx="2" fill="#d8dcc5" />
       <rect x="-30" y="-20" width="18" height="36" rx="1" fill="#626d72" />
       <rect x="-25" y="-15" width="8" height="26" fill="#b1c293" />

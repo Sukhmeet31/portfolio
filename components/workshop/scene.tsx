@@ -17,6 +17,8 @@ import { Playground } from "./playground";
 import { SignalMarkers } from "./signal-run";
 import { CoastalWorld, islandTrees, type Wave } from "./coastal-world";
 import { CoastalActivities } from "./coastal-activities";
+import { AdventureWorld, COVE_ROCKS, FerryModel } from "./adventure-world";
+import { ferryPosition, type AdventureSave, type BestLap } from "@/lib/adventure";
 import { stuntHeight, type RaceState } from "@/lib/coastal-games";
 import {
   Architecture,
@@ -40,6 +42,11 @@ type Props = {
   boost: boolean;
   raceRun: number;
   raceActive: boolean;
+  adventure: AdventureSave;
+  voyage: { id: number; returning: boolean } | null;
+  onArrive: (id: number) => void;
+  onLap: (lap: BestLap) => void;
+  onBottle: () => void;
   bowlingReset: number;
   wave: Wave;
   onWave: (point: Position) => void;
@@ -58,6 +65,7 @@ const subscribeVisibility = (callback: () => void) => {
   return () => document.removeEventListener("visibilitychange", callback);
 };
 const obstacles = [
+  ...COVE_ROCKS,
   ...projects.map((p) => p.station),
   ...toys.filter((toy) => toy.id !== "paint"),
   ...islandTrees.map((tree) => ({ ...tree, halfX: 0.35, halfZ: 0.35 })),
@@ -86,16 +94,22 @@ function Rover({
   spawn,
   boost,
   raceActive,
+  adventure,
+  voyage,
+  onArrive,
   reducedMotion,
   joltRef,
+  headingRef,
   roverPosition: positionRef,
-}: Props & { roverPosition: RefObject<Position>; joltRef: RefObject<number>; reducedMotion: boolean }) {
+}: Props & { roverPosition: RefObject<Position>; headingRef: RefObject<number>; joltRef: RefObject<number>; reducedMotion: boolean }) {
   const group = useRef<Group>(null);
+  const crossing = useRef({ elapsed: 0, updatedAt: 0 });
   const zone = useRef<string | null>(null);
   const lastReported = useRef(0);
   const invalidate = useThree((s) => s.invalidate);
   useEffect(() => {
     positionRef.current = { ...spawn };
+    headingRef.current = 0;
     if (group.current) {
       group.current.position.set(spawn.x, 0, spawn.z);
       group.current.rotation.y = 0;
@@ -103,12 +117,40 @@ function Rover({
     zone.current = null;
     onPosition(spawn);
     invalidate();
-  }, [reset, spawn, invalidate, onPosition, positionRef]);
+  }, [reset, spawn, invalidate, onPosition, positionRef, headingRef]);
   useEffect(() => {
     if (active) invalidate();
   }, [active, invalidate]);
-  useFrame((state, delta) => {
+  useEffect(() => {
+    if (!voyage) return;
+    crossing.current = { elapsed: 0, updatedAt: performance.now() };
+    const visibility = () => {
+      crossing.current.updatedAt = performance.now();
+      if (!document.hidden) invalidate();
+    };
+    document.addEventListener("visibilitychange", visibility);
+    invalidate();
+    return () => document.removeEventListener("visibilitychange", visibility);
+  }, [voyage, invalidate]);
+  useFrame((_, delta) => {
     if (!group.current || document.hidden) return;
+    const now = performance.now();
+    if (voyage) {
+      if (crossing.current.elapsed >= 6) return;
+      crossing.current.elapsed = reducedMotion ? 6 : Math.min(6, crossing.current.elapsed + (now - crossing.current.updatedAt) / 1000);
+      crossing.current.updatedAt = now;
+      const point = ferryPosition(voyage.returning, crossing.current.elapsed / 6);
+      positionRef.current = point;
+      group.current.position.set(point.x, 0, point.z);
+      group.current.rotation.set(0, voyage.returning ? Math.PI / 2 : -Math.PI / 2, 0);
+      if (now - lastReported.current > 120 || crossing.current.elapsed === 6) {
+        onPosition(point);
+        lastReported.current = now;
+      }
+      if (crossing.current.elapsed === 6) onArrive(voyage.id);
+      invalidate();
+      return;
+    }
     joltRef.current = Math.max(0, joltRef.current - Math.min(delta, 0.05));
     group.current.rotation.z = reducedMotion ? 0 : Math.sin(joltRef.current * 35) * joltRef.current * 0.5;
     group.current.position.y = stuntHeight(positionRef.current) + (reducedMotion ? 0 : Math.abs(Math.sin(joltRef.current * 22)) * joltRef.current * 0.4);
@@ -135,7 +177,8 @@ function Rover({
       boost || held.has("shift") ? 10 : raceActive ? 8 : Math.abs(positionRef.current.x) < 10 && Math.abs(positionRef.current.z) < 8 ? 2.8 : 6,
     );
     group.current.position.set(positionRef.current.x, stuntHeight(positionRef.current), positionRef.current.z);
-    group.current.rotation.y = Math.atan2(-dx, -dz);
+    headingRef.current = Math.atan2(-dx, -dz);
+    group.current.rotation.y = headingRef.current;
     const nearby =
       projects.find(
         (p) =>
@@ -146,16 +189,19 @@ function Rover({
       )?.slug ?? null;
     if (nearby && nearby !== zone.current) onSelect(nearby, false);
     zone.current = nearby;
-    if (state.clock.elapsedTime - lastReported.current > 0.12) {
+    if (now - lastReported.current > 120) {
       onPosition({ ...positionRef.current });
-      lastReported.current = state.clock.elapsedTime;
+      lastReported.current = now;
     }
     invalidate();
   });
   return (
     <group ref={group} position={[START_POSITION.x, 0, START_POSITION.z]}>
+      {voyage && <FerryModel />}
       <RoverModel
-        color={roverPaints[actions.paint % roverPaints.length].color}
+        color={adventure.paint === "coral" ? "#e07961" : adventure.paint === "sunset" ? "#e9a63e" : roverPaints[actions.paint % roverPaints.length].color}
+        rally={adventure.rally}
+        headlights={adventure.headlights}
       />
     </group>
   );
@@ -274,6 +320,7 @@ function StationLabelPositions({ labels }: Pick<Props, "labels">) {
 }
 export default function Scene(props: Props) {
   const roverPosition = useRef({ ...START_POSITION });
+  const headingRef = useRef(0);
   const joltRef = useRef(0);
   const visible = useSyncExternalStore(
     subscribeVisibility,
@@ -323,6 +370,7 @@ export default function Scene(props: Props) {
         shadow-normalBias={0.04}
       />
       <CoastalWorld night={props.dusk} reducedMotion={reducedMotion} visible={visible} onWave={props.onWave} wave={props.wave} />
+      <AdventureWorld night={props.dusk} found={props.adventure.found} onBottle={props.onBottle} />
       <Architecture dusk={props.dusk} />
       <SignalMarkers progress={props.signalProgress} />
       {projects.map((project) => (
@@ -349,8 +397,8 @@ export default function Scene(props: Props) {
         onPlay={props.onPlay}
         onComplete={props.onToyComplete}
       />
-      <Rover {...props} roverPosition={roverPosition} joltRef={joltRef} reducedMotion={reducedMotion} />
-      <CoastalActivities roverPosition={roverPosition} joltRef={joltRef} reset={props.reset} bowlingReset={props.bowlingReset} raceRun={props.raceRun} raceActive={props.raceActive} reducedMotion={reducedMotion} onRace={props.onRace} onBowling={props.onBowling} />
+      <Rover {...props} roverPosition={roverPosition} headingRef={headingRef} joltRef={joltRef} reducedMotion={reducedMotion} />
+      <CoastalActivities roverPosition={roverPosition} headingRef={headingRef} best={props.adventure.best} onLap={props.onLap} joltRef={joltRef} reset={props.reset} bowlingReset={props.bowlingReset} raceRun={props.raceRun} raceActive={props.raceActive} reducedMotion={reducedMotion} onRace={props.onRace} onBowling={props.onBowling} />
       <Camera
         action={props.cameraAction}
         follow={props.follow}

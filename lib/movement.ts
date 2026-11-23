@@ -1,4 +1,4 @@
-import { WORLD } from "./workshop-world.ts";
+import { landBounds } from "./adventure.ts";
 export type Position = { x: number; z: number };
 export type Obstacle = Position & { halfX: number; halfZ: number };
 export const START_POSITION: Position = { x: 0, z: 2.8 };
@@ -20,6 +20,7 @@ export function stepRover(
   const dx = ((direction.x / magnitude) * distance) / steps;
   const dz = ((direction.z / magnitude) * distance) / steps;
   let { x, z } = position;
+  const bounds = landBounds(position);
   const blocked = (px: number, pz: number) =>
     obstacles.some(
       (o) =>
@@ -27,9 +28,9 @@ export function stepRover(
         Math.abs(pz - o.z) < o.halfZ + ROVER_RADIUS,
     );
   for (let i = 0; i < steps; i++) {
-    const nextX = Math.max(-WORLD.maxX, Math.min(WORLD.maxX, x + dx));
+    const nextX = Math.max(bounds.minX, Math.min(bounds.maxX, x + dx));
     if (!blocked(nextX, z)) x = nextX;
-    const nextZ = Math.max(-WORLD.maxZ, Math.min(WORLD.maxZ, z + dz));
+    const nextZ = Math.max(bounds.minZ, Math.min(bounds.maxZ, z + dz));
     if (!blocked(x, nextZ)) z = nextZ;
   }
   return { x, z };

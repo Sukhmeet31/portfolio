@@ -2357,3 +2357,62 @@ html[data-workshop-night="true"] .workshop-view-options button[aria-pressed="tru
   .workshop-minimap { width: 93px; }
   .scene-hint { max-width: calc(100% - 24px); font-size: 7px; }
 }
+
+/* Workshop adventures */
+.ghost-status { color: var(--blue); font-size: 9px; margin-bottom: 8px; }
+.adventure-bar, .recruiter-tour {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  background: var(--paper);
+}
+.adventure-bar :is(a, button), .tour-buttons button, .expedition-panels button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  font-size: 11px;
+  text-align: left;
+}
+.adventure-bar :is(a, button):hover:not(:disabled), .tour-buttons button:hover:not(:disabled), .expedition-panels button:hover:not(:disabled) {
+  border-color: var(--blue);
+}
+.adventure-bar button:last-child { margin-left: auto; }
+.recruiter-tour { display: grid; grid-template-columns: minmax(0, 1fr) auto; padding-block: 22px; gap: 18px; }
+.tour-copy { max-width: 70ch; }
+.tour-copy > span { color: var(--blue); font-size: 9px; }
+.tour-copy h2 { margin: 6px 0 8px; font-size: clamp(20px, 3vw, 28px); letter-spacing: -0.04em; }
+.tour-copy p { margin: 0 0 8px; font-size: 13px; line-height: 1.55; color: var(--muted); }
+.tour-copy a, .bottle-story a { color: var(--blue); font-size: 12px; text-decoration: underline; text-underline-offset: 3px; }
+.tour-links, .tour-buttons, .garage-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.tour-buttons { max-width: 220px; }
+.expedition-panels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); background: var(--paper); border-top: 1px solid var(--line); }
+.expedition-panels > section { padding: 20px; min-width: 0; scroll-margin-top: 10px; }
+.expedition-panels > section + section { border-left: 1px solid var(--line); }
+.expedition-panels h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: 19px; letter-spacing: -0.03em; }
+.expedition-panels p, .treasure-list { font-size: 12px; line-height: 1.55; color: var(--muted); }
+.treasure-list { padding-left: 22px; display: grid; gap: 6px; margin-block: 10px 15px; list-style: decimal; }
+.treasure-list strong { font-weight: 500; }
+.treasure-list .discovered { color: var(--blue); }
+.expedition-panels fieldset { border: 1px solid var(--line); padding: 10px; margin-top: 14px; }
+.expedition-panels fieldset button { margin: 4px; }
+.expedition-panels legend { font-size: 12px; padding-inline: 4px; }
+.expedition-panels button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.garage-options { margin-bottom: 12px; }
+.bottle-story { border-top: 1px solid var(--line); padding-top: 12px; }
+.bottle-story > strong { font-size: 13px; }
+
+@media (max-width: 760px) {
+  .adventure-bar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding: 10px 12px; }
+  .adventure-bar button:last-child { margin-left: 0; }
+  .recruiter-tour, .expedition-panels { grid-template-columns: minmax(0, 1fr); }
+  .tour-buttons { max-width: none; }
+  .expedition-panels > section + section { border-left: 0; border-top: 1px solid var(--line); }
+}

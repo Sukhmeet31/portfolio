@@ -58,6 +58,12 @@ The Manrope variable font is self-hosted in `public/fonts/`, with its OFL licenc
 
 ## Workshop controls and fallback
 
+- Finish a clean coastal lap to save your personal best and earn a medal. Start another lap to race the translucent replay of that run.
+- Open Treasure hunt for landmark clues. Drive near the first three markers to collect them, then visit Rover garage to equip earned paint, wheels, and headlights. Collect all three passport stamps to unlock rally wheels.
+- Take the ferry to Secret Cove and drive to the golden marker to open the bottle puzzle. Return to mainland from the adventures bar. Reduced motion skips the sailing animation.
+- Start the Recruiter tour for a roughly one-minute overview of all three projects. Pause or skip between stops, open a case study, or use the résumé and contact links at the end. The tour also works without 3D.
+- Lap records, treasures, and garage choices are saved in the current browser.
+
 - The 64 × 50 island has exactly 10 times the previous 20 × 16 courtyard's area. The project court remains in its centre, with a west circuit, east bowling lane and coastal ramp, pier and lighthouse.
 - Click or focus the scene, then use WASD or arrow keys, or hold the on-screen direction buttons. Hold Shift or toggle Boost to accelerate. Movement stays inside the shoreline and slides along obstacles.
 - The camera follows the rover from the moment the workshop opens. Use the named quick-travel stops to visit a district; travel clears held input and active challenges. Island overview restores the wide view, and Follow rover returns to driving view. The mini-map tracks the rover across the entire island.

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { Group, Mesh, MeshBasicMaterial, Object3D, PlaneGeometry } from "three";
 import { WORLD } from "@/lib/workshop-world";
+import { COVE } from "@/lib/adventure";
 import { stuntHeight } from "@/lib/coastal-games";
 import type { Position } from "@/lib/movement";
 import { Block, Disc } from "./objects";
@@ -57,7 +58,10 @@ function Ocean({ night, reducedMotion, visible, onWave, wave }: {
     <group>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.65, 0]} onClick={(event: ThreeEvent<MouseEvent>) => {
         event.stopPropagation();
-        if (event.delta < 5 && (Math.abs(event.point.x) > WORLD.width / 2 + 1.2 || Math.abs(event.point.z) > WORLD.depth / 2 + 1.2)) onWave({ x: event.point.x, z: event.point.z });
+        const { x, z } = event.point;
+        const onMainland = Math.abs(x) <= WORLD.width / 2 + 1.2 && Math.abs(z) <= WORLD.depth / 2 + 1.2;
+        const onCove = Math.abs(x - COVE.x) <= COVE.width / 2 + 0.7 && Math.abs(z) <= COVE.depth / 2 + 0.7;
+        if (event.delta < 5 && !onMainland && !onCove) onWave({ x, z });
       }}>
         <planeGeometry ref={geometry} args={[600, 600, 100, 100]} />
         <meshStandardMaterial color={night ? "#12364f" : "#4ba3b6"} roughness={0.32} metalness={0.22} flatShading />

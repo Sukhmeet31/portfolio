@@ -24,10 +24,16 @@ test("coastal circuit completes a real driven lap and restarts", async ({ page }
   await driveTo(page, "s", 1, 13, 1);
   await driveTo(page, "a", 0, -21, -1);
   await expect(progress).toContainText("Lap complete");
+  const personalBest = page.getByLabel("Personal best");
+  await expect(personalBest).toContainText("medal");
+  const saved = await personalBest.textContent();
   await page.getByRole("button", { name: "Restart coastal lap", exact: true }).click();
   await expect(progress).toContainText("0 / 6");
+  await expect(page.getByText("Ghost racing", { exact: true })).toBeVisible();
   await driveTo(page, "w", 1, 8, -1);
   await expect(progress).toContainText("Off track");
+  await page.reload();
+  await expect(personalBest).toHaveText(saved!);
 });
 
 test("bowling is driven by rover collisions and can be re-racked", async ({ page }) => {

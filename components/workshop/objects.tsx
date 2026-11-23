@@ -188,7 +188,7 @@ export function PavilionStation() {
     </group>
   );
 }
-export function RoverModel({ color = colors.blue }: { color?: string }) {
+export function RoverModel({ color = colors.blue, rally = false, headlights = false }: { color?: string; rally?: boolean; headlights?: boolean }) {
   return (
     <group>
       <Block position={[0, 0.41, 0]} size={[0.76, 0.3, 1]} color={color} />
@@ -216,12 +216,12 @@ export function RoverModel({ color = colors.blue }: { color?: string }) {
             rotation={[0, 0, Math.PI / 2]}
           >
             <mesh castShadow>
-              <cylinderGeometry args={[0.25, 0.25, 0.16, 16]} />
+              <cylinderGeometry args={[0.25, 0.25, rally ? 0.27 : 0.16, 16]} />
               <meshStandardMaterial color={colors.ink} roughness={0.9} />
             </mesh>
-            <mesh position={[0, x > 0 ? -0.09 : 0.09, 0]}>
+            <mesh position={[0, x > 0 ? (rally ? -0.145 : -0.09) : (rally ? 0.145 : 0.09), 0]}>
               <cylinderGeometry args={[0.1, 0.1, 0.02, 16]} />
-              <meshStandardMaterial color="#9ba293" />
+              <meshStandardMaterial color={rally ? "#ffb462" : "#9ba293"} />
             </mesh>
           </group>
         )),
@@ -235,6 +235,10 @@ export function RoverModel({ color = colors.blue }: { color?: string }) {
         <sphereGeometry args={[0.055, 12, 8]} />
         <meshStandardMaterial color={colors.blue} />
       </mesh>
+      {headlights && [-0.27, 0.27].map((x) => <mesh key={x} position={[x, 0.45, -0.53]}>
+        <boxGeometry args={[0.13, 0.13, 0.05]} /><meshBasicMaterial color="#fff5bc" />
+      </mesh>)}
+      {headlights && <pointLight position={[0, 0.52, -1.5]} color="#ffe7a5" intensity={5} distance={4} />}
     </group>
   );
 }

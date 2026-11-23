@@ -1,6 +1,7 @@
 import { Flag, Moon, Sun, Waves, Zap, Map, CircleDot, Cone, Trees, Home } from "lucide-react";
 import { destinations, type DestinationId } from "@/lib/workshop-world";
 import type { RaceState } from "@/lib/coastal-games";
+import { lapMedal, type BestLap } from "@/lib/adventure";
 
 export const destinationIcons = { home: Home, race: Flag, bowling: Cone, stunts: Trees, coast: Waves };
 
@@ -22,8 +23,9 @@ export function IslandTravel({ disabled, night, boost, onTravel, onNight, onBoos
   </nav>;
 }
 
-export function CoastalGames({ disabled, race, pins, waves, onRace, onBowling, onWaves }: {
+export function CoastalGames({ disabled, race, best, pins, waves, onRace, onBowling, onWaves }: {
   disabled: boolean; race: RaceState | null; pins: number; waves: number;
+  best: BestLap | null;
   onRace: () => void; onBowling: () => void; onWaves: () => void;
 }) {
   return <section className="coastal-games" aria-label="Island activities">
@@ -32,6 +34,8 @@ export function CoastalGames({ disabled, race, pins, waves, onRace, onBowling, o
       <h3>A lap by the sea.</h3>
       <p>Six glowing gates. Stay on the asphalt and chase a clean lap.</p>
       <strong aria-label="Race progress">{!race ? "Your starting grid is ready." : race.invalid ? "Off track · Restart for a clean lap" : race.finished ? `Lap complete · ${race.elapsed.toFixed(1)}s` : `${race.next} / 6 gates · ${race.elapsed.toFixed(1)}s`}</strong>
+      <p aria-label="Personal best">{best ? `${best.duration.toFixed(1)}s · ${lapMedal(best.duration)} medal` : "Finish a clean lap to save your ghost."}</p>
+      {best && <span className="mono ghost-status">{race && !race.finished && !race.invalid ? "Ghost racing" : "Ghost ready"}</span>}
       <button disabled={disabled} aria-label={race ? "Restart coastal lap" : "Start coastal lap"} onClick={onRace}><Flag size={13} />{race ? "Restart lap" : "Start a lap"}<span>↗</span></button>
     </article>
     <article>

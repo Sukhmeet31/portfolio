@@ -42,6 +42,9 @@ import { stampProject, useProjectPassport } from "@/lib/project-passport";
 import { newRace, type RaceState } from "@/lib/coastal-games";
 import { CoastalGames, IslandTravel, destinationIcons } from "./coastal-controls";
 import type { Wave } from "./coastal-world";
+import { AdventureBar, ExpeditionPanel, RecruiterTour, type Tour } from "./adventure-controls";
+import { CLUES, MAIN_DOCK, COVE_DOCK, chooseBest, collectNear, unlocks, type AdventureSave, type BestLap } from "@/lib/adventure";
+import { updateAdventure, useAdventure } from "@/lib/adventure-store";
 
 const toyIcons = { sculpture: Orbit, plane: Send, paint: Palette };
 
@@ -97,6 +100,13 @@ const movementKeys = new Set([
 
 export function Workshop() {
   const stamps = useProjectPassport();
+  const save = useAdventure();
+  const [voyage, setVoyage] = useState<{ id: number; returning: boolean } | null>(null);
+  const voyageRef = useRef(0);
+  const [tour, setTour] = useState<Tour | null>(null);
+  const tourTime = useRef(15000);
+  const tourStopRef = useRef(-1);
+  const [puzzle, setPuzzle] = useState<"closed" | "open" | "retry">("closed");
   const [selection, setSelection] = useState<{
     slug: string;
     focus: boolean;
@@ -142,6 +152,8 @@ export function Workshop() {
   const keys = useRef(new Set<string>());
   const previousFocus = useRef<HTMLElement | null>(null);
   const project = projects.find((p) => p.slug === selected);
+  const atCove = !voyage && position.x >= 42;
+  const nearBottle = atCove && Math.hypot(position.x - CLUES[3].x, position.z - CLUES[3].z) < 2.4;
   const stop = useCallback(() => {
     keys.current.clear();
     setActive(false);
@@ -150,18 +162,33 @@ export function Workshop() {
     setStatic(true);
     setSignalProgress(null);
     setRace(null);
+    setVoyage(null);
+    voyageRef.current += 1;
     stop();
   }, [stop]);
   const onReady = useCallback(() => setReady(true), []);
   const onRace = useCallback((state: RaceState) => setRace(state), []);
+  const onLap = useCallback((lap: BestLap) => updateAdventure((current) => {
+    const best = chooseBest(current.best, lap);
+    return best === current.best ? current : { ...current, best };
+  }), []);
   const onBowling = useCallback((count: number) => setPins(count), []);
   const onWave = useCallback((point: Position) => setWave((value) => ({ ...point, id: value.id + 1 })), []);
   const onPosition = useCallback((p: Position) => {
     setPosition(p);
+    if (CLUES.some((clue) => clue.id !== "bottle" && Math.hypot(p.x - clue.x, p.z - clue.z) < 1.85)) {
+      updateAdventure((current) => {
+        const found = collectNear(current.found, p);
+        return found === current.found ? current : { ...current, found };
+      });
+    }
     setSignalProgress((progress) =>
       progress === null ? null : advanceSignalRun(progress, p),
     );
   }, []);
+  const openBottle = useCallback(() => {
+    if (nearBottle && !save.found.includes("bottle")) setPuzzle("open");
+  }, [nearBottle, save.found]);
   const play = useCallback(
     (id: ToyId) => {
       if (!ready || isStatic || busyActions.current.has(id)) return;
@@ -169,6 +196,7 @@ export function Workshop() {
         busyActions.current.add(id);
         setBusy((state) => ({ ...state, [id]: true }));
       }
+      if (id === "paint") updateAdventure((current) => current.paint === "stock" ? current : { ...current, paint: "stock" });
       setActions((state) => ({ ...state, [id]: state[id] + 1 }));
       setMessage(
         id === "plane"
@@ -192,12 +220,64 @@ export function Workshop() {
   const select = useCallback((slug: string, focus: boolean) => {
     stampProject(slug);
     if (focus) {
+      setTour(null);
       previousFocus.current = document.activeElement as HTMLElement;
       keys.current.clear();
       setActive(false);
     }
     setSelection({ slug, focus });
   }, []);
+  const moveTo = useCallback((next: Position) => {
+    stop();
+    setSignalProgress(null);
+    setRace(null);
+    setVoyage(null);
+    voyageRef.current += 1;
+    setPuzzle("closed");
+    setSpawn(next);
+    setPosition(next);
+    setReset((value) => value + 1);
+    setSelection(null);
+    setFollow(true);
+  }, [stop]);
+
+  const visitTourStop = useCallback((index: number, paused = false) => {
+    const stopProject = projects[index];
+    if (stopProject) {
+      moveTo({ x: stopProject.station.x, z: stopProject.station.z + 3.1 });
+      select(stopProject.slug, false);
+    }
+    setTour({ stop: index, paused, finished: false });
+  }, [moveTo, select]);
+
+  useEffect(() => {
+    if (!tour || tour.paused || tour.finished) return;
+    if (tourStopRef.current !== tour.stop) {
+      tourStopRef.current = tour.stop;
+      tourTime.current = 15000;
+    }
+    let timer: number | undefined;
+    let startedAt = 0;
+    const cancel = () => {
+      if (timer === undefined) return;
+      window.clearTimeout(timer);
+      timer = undefined;
+      tourTime.current = Math.max(0, tourTime.current - (performance.now() - startedAt));
+    };
+    const schedule = () => {
+      cancel();
+      if (document.hidden) return;
+      startedAt = performance.now();
+      timer = window.setTimeout(() => {
+        timer = undefined;
+        if (tour.stop < projects.length) visitTourStop(tour.stop + 1);
+        else setTour({ ...tour, finished: true });
+      }, tourTime.current);
+    };
+    schedule();
+    document.addEventListener("visibilitychange", schedule);
+    return () => { cancel(); document.removeEventListener("visibilitychange", schedule); };
+  }, [tour, visitTourStop]);
   useEffect(() => {
     if (selection?.focus) panelHeading.current?.focus({ preventScroll: true });
   }, [selection]);
@@ -228,12 +308,8 @@ export function Workshop() {
     setCameraAction((a) => ({ id: a.id + 1, type }));
   }
   function resetRover() {
-    stop();
-    setSignalProgress(null);
-    setRace(null);
-    setSpawn(START_POSITION);
-    setReset((value) => value + 1);
-    setSelection(null);
+    setTour(null);
+    moveTo(START_POSITION);
     scene.current?.focus({ preventScroll: true });
   }
   function startSignalRun() {
@@ -244,13 +320,8 @@ export function Workshop() {
   }
   function travel(id: DestinationId) {
     const destination = destinations.find((item) => item.id === id)!;
-    stop();
-    setSignalProgress(null);
-    setRace(null);
-    setSpawn({ x: destination.x, z: destination.z });
-    setReset((value) => value + 1);
-    setSelection(null);
-    setFollow(true);
+    setTour(null);
+    moveTo({ x: destination.x, z: destination.z });
     scene.current?.focus({ preventScroll: true });
     scene.current?.scrollIntoView({ block: "center", behavior: "instant" });
   }
@@ -265,14 +336,51 @@ export function Workshop() {
     setPins(0);
   }
   function drive(key: string, down: boolean) {
-    if (!ready || isStatic) return;
+    if (!ready || isStatic || voyage) return;
+    if (down) setTour(null);
     if (down) keys.current.add(key);
     else keys.current.delete(key);
     setActive([...keys.current].some((key) => movementKeys.has(key)));
   }
+  function sail() {
+    const returning = atCove;
+    setTour(null);
+    moveTo(returning ? COVE_DOCK : MAIN_DOCK);
+    setVoyage({ id: voyageRef.current, returning });
+    scene.current?.focus({ preventScroll: true });
+    scene.current?.scrollIntoView({ block: "center", behavior: "instant" });
+  }
+  const onArrive = useCallback((id: number) => {
+    if (id === voyageRef.current) setVoyage(null);
+  }, []);
+  function startTour() {
+    tourStopRef.current = -1;
+    visitTourStop(0);
+    requestAnimationFrame(() => document.querySelector<HTMLElement>(".recruiter-tour")?.focus());
+  }
+  function answerBottle(slug: string) {
+    if (!nearBottle || puzzle === "closed") return;
+    if (slug !== projects[1].slug) { setPuzzle("retry"); return; }
+    updateAdventure((current) => current.found.includes("bottle") ? current : { ...current, found: [...current.found, "bottle"] });
+    setPuzzle("closed");
+  }
+  function equip(gear: Partial<Pick<AdventureSave, "paint" | "rally" | "headlights">>) {
+    updateAdventure((current) => {
+      const earned = unlocks(current.found, stamps.length);
+      if ((gear.paint === "coral" && !earned.coral) || (gear.paint === "sunset" && !earned.sunset)
+        || (gear.rally && !earned.rally) || (gear.headlights && !earned.headlights)) return current;
+      return { ...current, ...gear };
+    });
+  }
   return (
     <>
       <IslandTravel disabled={!ready || isStatic} night={dusk} boost={boost} onTravel={travel} onNight={() => setDusk((value) => !value)} onBoost={() => setBoost((value) => !value)} onOverview={() => camera("reset")} />
+      <AdventureBar atCove={atCove} sailing={Boolean(voyage)} disabled={!ready || isStatic} onFerry={sail} onTour={startTour} />
+      {tour && <RecruiterTour tour={tour} onStep={(index) => visitTourStop(index, tour.paused)}
+        onPause={() => setTour({ ...tour, paused: !tour.paused })} onClose={() => {
+          setTour(null);
+          document.getElementById("start-recruiter-tour")?.focus();
+        }} />}
       <div className="workshop-activity-bar">
         <SignalRunControl
           progress={signalProgress}
@@ -314,12 +422,14 @@ export function Workshop() {
             }}
             onKeyDown={(event) => {
               if (
-                isStatic ||
+                isStatic || voyage ||
                 event.target !== event.currentTarget ||
                 (!movementKeys.has(event.key.toLowerCase()) && event.key !== "Shift")
               )
                 return;
               event.preventDefault();
+              if (event.repeat && !keys.current.has(event.key.toLowerCase())) return;
+              if (movementKeys.has(event.key.toLowerCase())) setTour(null);
               keys.current.add(event.key.toLowerCase());
               setActive([...keys.current].some((key) => movementKeys.has(key)));
             }}
@@ -347,6 +457,11 @@ export function Workshop() {
                   boost={boost}
                   raceRun={raceRun}
                   raceActive={raceActive}
+                  adventure={{ ...save, rally: save.rally && stamps.length >= projects.length }}
+                  voyage={voyage}
+                  onArrive={onArrive}
+                  onLap={onLap}
+                  onBottle={openBottle}
                   bowlingReset={bowlingReset}
                   wave={wave}
                   onWave={onWave}
@@ -401,7 +516,10 @@ export function Workshop() {
               <div className="scene-hint mono">
                 <span className="scene-status-dot" />
                 {ready
-                  ? signalProgress !== null
+                  ? voyage
+                    ? "FERRY CROSSING · ENJOY THE VIEW"
+                    : atCove ? "SECRET COVE · FOLLOW THE GOLDEN MARKER"
+                    : signalProgress !== null
                     ? `${signalProgress} / 5 SIGNALS · ${signalProgress === signals.length ? "CIRCUIT COMPLETE" : "FOLLOW THE GLOW"}`
                     : race !== null
                       ? race.invalid ? "OFF TRACK · RESTART FOR A CLEAN LAP" : race.finished ? `LAP COMPLETE · ${race.elapsed.toFixed(1)}s` : `${race.next} / 6 GATES · ${race.elapsed.toFixed(1)}s · FOLLOW THE GOLD`
@@ -415,7 +533,7 @@ export function Workshop() {
               <MiniMap position={position} progress={signalProgress} />
             )}
             {!isStatic &&
-              ready && (
+              ready && !voyage && (
                 <DirectionalPad
                   // Remounting releases a held finish-line input while keeping free driving available.
                   key={signalProgress === signals.length ? "completed" : "driving"}
@@ -461,7 +579,9 @@ export function Workshop() {
               </button>
             </div>
           </div>
-          <CoastalGames disabled={!ready || isStatic} race={race} pins={pins} waves={wave.id} onRace={startRace} onBowling={resetPins} onWaves={() => { travel("coast"); onWave({ x: 22, z: 29 }); }} />
+          <CoastalGames disabled={!ready || isStatic} race={race} best={save.best} pins={pins} waves={wave.id} onRace={startRace} onBowling={resetPins} onWaves={() => { travel("coast"); onWave({ x: 22, z: 29 }); }} />
+          <ExpeditionPanel save={save} stamps={stamps.length} disabled={!ready || isStatic || Boolean(voyage)}
+            nearbyBottle={nearBottle} atCove={atCove} puzzle={puzzle} onBottle={openBottle} onAnswer={answerBottle} onGear={equip} />
         </div>
         <aside className="workshop-sidebar">
           <span className="mono">THE PROJECT INDEX</span>

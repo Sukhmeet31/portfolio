@@ -45,7 +45,7 @@ export function WorkshopMusic() {
     };
     const explore = (event: Event) => {
       const target = event.target;
-      if (!(target instanceof Element) || !target.closest(".workshop-layout, .workshop-activity-bar, .workshop-travel") || target.closest(".radio-toggle")) return;
+      if (!(target instanceof Element) || !target.closest(".workshop-layout, .workshop-activity-bar, .workshop-travel, .adventure-bar, .recruiter-tour") || target.closest(".radio-toggle")) return;
       if (event instanceof KeyboardEvent && (event.repeat || event.ctrlKey || event.metaKey || event.altKey)) return;
       if (enabled.current && !document.hidden && !engine.current?.isPlaying) void syncPlayback();
     };
